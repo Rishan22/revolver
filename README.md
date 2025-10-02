@@ -4,8 +4,8 @@
 ```
 
 ╔════════════════════════════╗  
-║  R E V O L V E R 
-║  one-shot | shell scripts
+║  R E V O L V E R           
+║  one-shot shell scripts
 ╚════════════════════════════╝  
 ▄▄ ▄▄  
 ████▄▄▄▄████ 
