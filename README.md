@@ -1,4 +1,4 @@
-```markdown
+
 # REVOLVER
 
 ```
@@ -11,7 +11,7 @@
 ████▄▄▄▄████ 
 ▀▀ ▀▀ 
 
-````
+```
 
 **Revolver** turns your shell into a six-shooter.  
 Scripts are bullets. The barrel is your HUD.  
@@ -126,7 +126,7 @@ This project is released under **The Unlicense**.
 This is free and unencumbered software released into the public domain.
 Do whatever you want, recklessly.
 ...
-```
+
 
 Full text of The Unlicense: [https://unlicense.org](https://unlicense.org/)
 
