@@ -1,18 +1,14 @@
 
 # REVOLVER
-
 ```
-
 ╔════════════════════════════╗  
-║  R E V O L V E R           ║ 
-║  one-shot shell scripts    ║ 
+║  R E V O L V E R           
+║  shell script tool     
 ╚════════════════════════════╝  
-▄▄ ▄▄  
+▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄
 ████▄▄▄▄████ 
 ▀▀ ▀▀ 
-
 ```
-
 **Revolver** turns your shell into a six-shooter.  
 Scripts are bullets. The barrel is your HUD.  
 Pull the trigger, hear a *[BANG]*, or just a lonely *[CLIK]*.  
@@ -127,6 +123,4 @@ This is free and unencumbered software released into the public domain.
 Do whatever you want, recklessly.
 ...
 
-
-Full text of The Unlicense: [https://unlicense.org](https://unlicense.org/)
 
