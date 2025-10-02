@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# revolver - terminal revolver mini-app for one-shot scripts
+
+REPO="${HOME}/.revolver"
+BARREL_DIR="${REPO}/barrel"
+PHRASES="${REPO}/phrases.db"
+POINTER_FILE="${REPO}/pointer"
+CHAMBERS=6
+
+ensure_dirs() {
+  mkdir -p "${BARREL_DIR}"
+  touch "${PHRASES}"
+  [ -f "${POINTER_FILE}" ] || echo 1 > "${POINTER_FILE}"
+}
+
+read_pointer() { cat "${POINTER_FILE}" 2>/dev/null || echo 1; }
+write_pointer() { echo "$1" > "${POINTER_FILE}"; }
+chamber_path() { printf "%s/chamber%02d" "$BARREL_DIR" "$1"; }
+
+barrel_visual() {
+  ensure_dirs
+  local pointer=$(read_pointer)
+  echo "╔═ REVOLVER ═══════════════════════╗"
+  printf " ["
+  for i in $(seq 1 $CHAMBERS); do
+    if ls "$BARREL_DIR"/chamber$(printf "%02d" $i)__* >/dev/null 2>&1; then
+      printf " ●"
+    else
+      printf " ○"
+    fi
+  done
+  printf " ] slot:%d/%d\n" "$pointer" "$CHAMBERS"
+  echo "  "
+  for i in $(seq 1 $CHAMBERS); do
+    if [ "$i" -eq "$pointer" ]; then printf "  ^"; else printf "   "; fi
+  done
+  echo; echo "╚═════════════════════════════════╝"
+}
+
+next_empty_chamber() {
+  for i in $(seq 1 $CHAMBERS); do
+    if ! ls "$BARREL_DIR"/chamber$(printf "%02d" $i)__* >/dev/null 2>&1; then
+      echo $i; return
+    fi
+  done
+}
+
+advance_pointer() {
+  local p=$(read_pointer)
+  p=$((p % CHAMBERS + 1))
+  write_pointer "$p"
+}
+
+load_file() {
+  ensure_dirs
+  local src="$1"
+  [ -f "$src" ] || { echo "[ERR] not found: $src"; exit 1; }
+  local slot=$(next_empty_chamber) || { echo "[FULL] barrel full"; exit 1; }
+  local base=$(basename "$src")
+  cp -a "$src" "$(chamber_path $slot)__$base"
+  chmod +x "$(chamber_path $slot)__$base"
+  echo "[LOAD] $base -> chamber $slot"
+}
+
+resolve_chamber_file() { ls "$BARREL_DIR"/chamber$(printf "%02d" $1)__* 2>/dev/null | head -n1; }
+
+exec_bullet() { chmod +x "$1" 2>/dev/null; sudo "$1"; }
+
+fire() {
+  ensure_dirs
+  local p=$(read_pointer)
+  local file=$(resolve_chamber_file "$p")
+  if [ -z "$file" ]; then
+    echo "[CLIK]"; advance_pointer; return
+  fi
+  local name=$(basename "$file" | sed 's/^chamber[0-9]\+__//')
+  echo "[FIRE] $name"
+  if exec_bullet "$file"; then echo "[BANG] $name"; else echo "[DUD] $name"; fi
+  rm -f "$file"; advance_pointer
+}
+
+shoot_local() {
+  local name="${1#--}"
+  if [ -f "./$name" ]; then
+    chmod +x "./$name"
+    if sudo "./$name"; then echo "[BANG] $name"; else echo "[DUD] $name"; fi
+  else
+    echo '#!/usr/bin/env bash' > click.sh
+    echo 'echo "[CLIK]"' >> click.sh
+    chmod +x click.sh
+    sudo ./click.sh; rm -f click.sh
+  fi
+}
+
+burst() { for i in $(seq 1 $CHAMBERS); do write_pointer $i; fire; done; write_pointer 1; }
+spin() { local r=$((RANDOM % CHAMBERS + 1)); write_pointer $r; echo "[SPIN] chamber $r"; }
+set_chamber() { write_pointer "$1"; echo "[ROTATE] chamber $1"; }
+reload_barrel() { mkdir -p "$REPO/ejected_$(date +%s)"; mv "$BARREL_DIR"/* "$REPO"/ejected_* 2>/dev/null; echo "[EJECT]"; write_pointer 1; }
+click_create() { echo '#!/usr/bin/env bash' > click.sh; echo 'echo "[CLIK]"' >> click.sh; chmod +x click.sh; echo "[CLICK]"; }
+
+set_phrase() { ensure_dirs; grep -v "^$1|" "$PHRASES" > "$PHRASES.tmp" || true; echo "$1|$*" >> "$PHRASES.tmp"; mv "$PHRASES.tmp" "$PHRASES"; echo "[PHRASE] $1"; }
+trigger_phrase() { local line=$(grep "^$1|" "$PHRASES"); local cmds="${line#*|}"; IFS=';' read -ra steps <<< "$cmds"; for step in "${steps[@]}"; do $0 $step; done; }
+
+help_text() {
+  cat <<EOF
+Commands:
+  load <file>     load into barrel
+  barrel          show HUD
+  fire            trigger current chamber
+  shoot <file>    run ./file or [CLIK] if missing
+  burst           fire all chambers
+  spin            randomise pointer
+  chamber <n>     rotate to n
+  reload          eject all bullets
+  click           create click.sh
+  set-phrase <p> <cmds>   save macro
+  trigger <p>     execute macro
+EOF
+}
+
+ensure_dirs
+case "$1" in
+  load) load_file "$2";;
+  barrel) barrel_visual;;
+  fire) fire;;
+  shoot) shoot_local "$2";;
+  burst) burst;;
+  spin) spin;;
+  chamber) set_chamber "$2";;
+  reload) reload_barrel;;
+  click) click_create;;
+  set-phrase) shift; set_phrase "$@";;
+  trigger) trigger_phrase "$2";;
+  help|"") help_text;;
+esac
