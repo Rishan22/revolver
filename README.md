@@ -118,8 +118,5 @@ trigger <p>       execute saved macro
 
 This project is released under **The Unlicense**.
 
-```
-This is free and unencumbered software released into the public domain.
-...
 
 
